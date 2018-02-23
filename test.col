@@ -1,0 +1,58 @@
+0 Store numbers 1 to 100 on the floor
+fetch 100
+drop dish9
+teach loop
+	pickup dish9
+	drop dish1
+	fetch dish1
+	drop floor
+	pickup dish1
+	eat 1
+	drop dish9
+dish9 loop
+
+0 Reset dish1 and dog's mouth to 0
+pickup dish1
+eat
+
+0 Store the random numbers into dish1 and dish2
+fetch floor
+drop dish1
+fetch floor
+drop dish2
+
+0 Write the question "What is x + y?"
+bark "What is "
+fetch dish1
+give
+bark " + "
+fetch dish2
+give
+bark "? "
+
+0 Get the answer, store it in dish3
+fetch dish1
+fetch dish2
+drop dish3
+
+0 Take user's guess
+take
+drop dish10
+
+0 Check if it's right by taking the difference between the real answer and their guess and checking if the result is not 0
+fetch dish10
+eat dish3
+drop dish11
+
+fetch dish3
+eat dish10
+drop dish12
+
+teach wrong
+	bark "Wrong!\n"
+	bed
+
+dish11 wrong
+dish12 wrong
+
+bark "Right!\n"
