@@ -29,6 +29,8 @@ I've provided an interpreter written in Python, as well as a sample program in `
 ./main.py test.col
 ```
 
-## To do
+## To do / Goals
 * Custom exceptions to override Python's built-ins
 * A real-time interpreter to directly type into
+* Bring back plates (and possibly allow for backwards compatibility)
+* Make a little more like assembly to turn it into a teaching tool??
