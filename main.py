@@ -1,27 +1,25 @@
 #!/usr/bin/env python2
 
 import sys, random, re, time, ast
-import exceptions
+from errors import *
 
 class Dishes:
 	def __init__(self):
 		self.dishes = {}	# dictionary keys are strings representing dish locations (ex. dish1, dish42)
 		self.pattern = re.compile(r'dish[0-9]+')
-	
+
 	def _parse_addr(self, addr):
 		if self.addr_is_valid(addr):
 			return addr
-		else:
-			raise ValueError
-	
+
 	def addr_is_valid(self, addr):
 		return self.pattern.match(addr)
-	
+
 	def get(self, addr, move):
 		val = self.dishes[self._parse_addr(addr)]
 		if move: self.dishes[self._parse_addr(addr)] = 0
 		return val
-	
+
 	def set(self, addr, val):
 		if hasattr(self.dishes, self._parse_addr(addr)):
 			val += self.dishes[self._parse_addr(addr)]
@@ -30,16 +28,16 @@ class Dishes:
 class Floor:
 	def __init__(self):
 		self.floor = []		# a list of ints, chosen from randomly
-	
+
 	def get(self, move):
 		i = random.randint(0, len(self.floor)-1)
 		val = self.floor[i]
 		if move: del self.floor[i]
 		return val
-	
+
 	def put(self, val):
 		self.floor.append(val)
-	
+
 	def reset(self):
 		self.floor = []
 
@@ -64,8 +62,9 @@ class Collie:
 		self.is_being_taught = False
 		self.trick_being_taught = ""
 		self.asleep = False
-	
-	def eval_num(self, num=0, move=True):
+		self.line = ""
+
+	def eval_num(self, num=0, move=True, noerr=False):
 		if type(num) == int or num.isdigit():
 			val = int(num)
 		elif self.dishes.addr_is_valid(num):
@@ -73,85 +72,97 @@ class Collie:
 		elif num == "floor":
 			val = self.floor.get(move)
 		else:
-			raise ValueError
-		
+			if not noerr: AddressError(self.line, num)
+			return False
+
 		if val < 0: val = 0
 		return val
-	
-	
+
+
 	def fetch(self, num=0):
 		self.mouth += self.eval_num(num, move=False)
-	
+
 	def drop(self, loc):
 		if loc == "floor":
 			self.floor.put(self.mouth)
 		elif self.dishes.addr_is_valid(loc):
 			self.dishes.set(loc, self.mouth)
 		self.mouth = 0
-	
+
 	def pickup(self, loc):
 		self.mouth += self.eval_num(loc)
-	
+
 	def eat(self, num=0):
 		self.mouth -= self.eval_num(num, move=False)
-	
+
 	def take(self):
-		self.mouth += int(input("> "))
-	
+		try:
+			inp = raw_input("> ")
+			self.mouth += int(inp)
+		except KeyboardInterrupt as e:
+			KeyboardError(self.line)
+		except (SyntaxError, ValueError) as e:
+			InputError(self.line, inp)
+
 	def show(self):
 		sys.stdout.write(str(self.mouth))
-	
+
 	def give(self):
 		self.show()
 		self.mouth = 0
-	
+
 	def bark(self, string):
 		sys.stdout.write(ast.literal_eval(string))
-	
+
 	def sit(self, num=1):
 		time.sleep(self.eval_num(num))
-	
+
 	def bed(self):
 		self.asleep = True
-	
-	
+
+
 	def parse_line(self, line):	# call appropriate function with appropriate number value
 		if type(line) == list:
 			parts = line
 		else:
 			parts = line.split(" ")
-		
+
 		if not re.match(r'\t', parts[0]):
 			self.is_being_taught = False
 			self.trick_being_taught = ""
-		
+
 		parts = map(str.strip, parts)
-		
+		self.line = " ".join(parts)
+
+		# determine if teaching a trick
 		if parts[0] == "teach":
 			self.is_being_taught = True
 			self.trick_being_taught = parts[1]
 			self.tricks[self.trick_being_taught] = []
 			return
-		
+
+		# store lines in trick, don't execute them
 		if self.is_being_taught:
 			self.tricks[self.trick_being_taught].append(parts)
 			return
-		
+
+		# execute if cmd is a trick
 		if parts[0] in list(self.tricks.keys()):
 			for p in self.tricks[parts[0]]:
 				if not self.asleep:
 					self.parse_line(p)
 				else: break
 			return
-		
-		# BUG: regex should match ONLY a number and nothing else
-		if re.match(r'[0-9]', parts[0]) or self.dishes.addr_is_valid(parts[0]) or parts[0] == "floor":
-			rng = self.eval_num(parts[0], move=False)
-			if rng > 0:
-				for i in range(0, rng):
+
+		# match a number at beginning of line
+		num = self.eval_num(parts[0], move=False, noerr=True)
+		if num is not False:
+			if num > 0:
+				for i in range(0, num):
 					self.parse_line(parts[1:])
 			return
-		
+
+		# find argument(s) and execute command
 		arg = ' '.join(parts[1:]).strip()
 		cmd = parts[0]
 		if cmd in list(self.cmds.keys()):
@@ -159,13 +170,12 @@ class Collie:
 				self.cmds[cmd](arg)
 			else:
 				self.cmds[cmd]()
+		elif cmd is not '' and cmd is not ' ':
+			CommandError(self.line, cmd)
 
 dog = Collie()
-try:
-	with open(str(sys.argv[1])) as f:
-		for line in f:
-			if not dog.asleep:
-				dog.parse_line(line)
-			else: break
-except:
-	raise IOError("File not readable")
+with open(str(sys.argv[1])) as f:
+	for line in f:
+		if not dog.asleep:
+			dog.parse_line(line)
+		else: break
