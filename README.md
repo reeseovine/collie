@@ -1,4 +1,4 @@
-# **Collie** - an expansion of [Dog](https://esolangs.org/wiki/DOG)
+# **Collie** v1.2 - an expansion of [Dog](https://esolangs.org/wiki/DOG)
 
 Collie is a programming language created by Charter Jacobson, based on Jeremy Ruten’s Dog. The purpose of this language is to expand the capabilities of Dog and turn it into a more “useful” programming language. The most notable features, among many, are `teach`, a way to define routines, and the removal of `jump` and `label` for better control structures. Some minor changes from Dog include calling values “treats” instead of “cookies”, the omission of plates since there are an unlimited number of dishes, and renaming a few other commands.
 

@@ -5,18 +5,25 @@
 - InputError
 """
 
-def CollieError(type, line, desc):
-	print "Collie "+str(type)+":\n  "+str(line)+"\n"+str(desc)
-	quit()
+class CollieErrors():
+	def __init__(self):
+		self.errors_break = True
 
-def AddressError(line, addr):
-	CollieError("AddressError", line, "Invalid address or number: "+str(addr))
+	def CollieError(self, type, line, desc):
+		print "Collie "+str(type)+":"
+		if line is not "": print "  "+str(line)
+		print str(desc)
+		if self.errors_break: quit()
 
-def CommandError(line, cmd):
-	CollieError("CommandError", line, "Unknown command or trick: "+str(cmd))
+	def AddressError(self, line, addr):
+		self.CollieError("AddressError", line, "Invalid address or number: "+str(addr))
 
-def KeyboardError(line):
-	CollieError("KeyboardError", line, "The program was ended by user input.")
+	def CommandError(self, line, cmd):
+		self.CollieError("CommandError", line, "Unknown command or trick: "+str(cmd))
 
-def InputError(line, input):
-	CollieError("InputError", line, "Unexpected input: "+repr(input))
+	def KeyboardError(self, line):
+		self.errors_break = True
+		self.CollieError("KeyboardError", line, "The program was ended by user input.")
+
+	def InputError(self, line, input):
+		self.CollieError("InputError", line, "Unexpected input: "+repr(input))

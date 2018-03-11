@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 import sys, random, re, time, ast
-from errors import *
+from errors import CollieErrors
 
 class Dishes:
 	def __init__(self):
@@ -43,9 +43,10 @@ class Floor:
 
 class Collie:
 	def __init__(self):
+		self.err = CollieErrors()
 		self.dishes = Dishes()
 		self.floor = Floor()
-		self.mouth = 0		# a single value that is in the dog's mouth
+		self.mouth = 0  # a single value that is in the dog's mouth
 		self.cmds = {
 			'fetch':  self.fetch,
 			'drop':   self.drop,
@@ -63,6 +64,7 @@ class Collie:
 		self.trick_being_taught = ""
 		self.asleep = False
 		self.line = ""
+		self.print_newlines = False
 
 	def eval_num(self, num=0, move=True, noerr=False):
 		if type(num) == int or num.isdigit():
@@ -72,7 +74,7 @@ class Collie:
 		elif num == "floor":
 			val = self.floor.get(move)
 		else:
-			if not noerr: AddressError(self.line, num)
+			if not noerr: self.err.AddressError(self.line, num)
 			return False
 
 		if val < 0: val = 0
@@ -99,13 +101,14 @@ class Collie:
 		try:
 			inp = raw_input("> ")
 			self.mouth += int(inp)
-		except KeyboardInterrupt as e:
-			KeyboardError(self.line)
-		except (SyntaxError, ValueError) as e:
-			InputError(self.line, inp)
+		except KeyboardInterrupt:
+			self.err.KeyboardError(self.line)
+		except (SyntaxError, ValueError):
+			self.err.InputError(self.line, inp)
 
 	def show(self):
 		sys.stdout.write(str(self.mouth))
+		if self.print_newlines: sys.stdout.write("\n")
 
 	def give(self):
 		self.show()
@@ -113,6 +116,7 @@ class Collie:
 
 	def bark(self, string):
 		sys.stdout.write(ast.literal_eval(string))
+		if self.print_newlines: sys.stdout.write("\n")
 
 	def sit(self, num=1):
 		time.sleep(self.eval_num(num))
@@ -171,11 +175,28 @@ class Collie:
 			else:
 				self.cmds[cmd]()
 		elif cmd is not '' and cmd is not ' ':
-			CommandError(self.line, cmd)
+			self.err.CommandError(self.line, cmd)
 
-dog = Collie()
-with open(str(sys.argv[1])) as f:
-	for line in f:
-		if not dog.asleep:
+
+if __name__ == "__main__":
+	dog = Collie()
+	if len(sys.argv) > 1:
+		with open(str(sys.argv[1])) as f:
+			for line in f:
+				if not dog.asleep:
+					dog.parse_line(line)
+				else: break
+	else:
+		dog.err.errors_break = False
+		dog.print_newlines = True
+		print "Collie 1.2 real-time interpreter"
+		while True:
+			try:
+				line = raw_input(">>> ")
+			except KeyboardInterrupt:
+				dog.err.KeyboardError("")
+
 			dog.parse_line(line)
-		else: break
+
+			if dog.asleep:
+				break
